@@ -22,7 +22,7 @@ st.markdown("### 📝 Vehicle & Owner Details")
 col1, col2 = st.columns(2)
 with col1:
     v_no = st.text_input("Vehicle Number").upper()
-    mobile_no = st.text_input("Mobile No") # Mobile No Upar rakha hai
+    mobile_no = st.text_input("Mobile No") 
     reg_date = st.text_input("Registration Date")
     owner_name = st.text_input("Owner Name").upper()
     son_dougher = st.text_input("Son/Daughter/Wife Of").upper()
@@ -77,21 +77,22 @@ if st.button("Generate Final Elite Report"):
         c.line(50, 720, 540, 720)
 
         y = 690
-        def draw_row(label, value, y_pos):
+
+        # Modified draw_row to handle side-by-side Mobile No
+        def draw_row(label, value, y_pos, extra_label=None, extra_value=None):
             c.setFont("Helvetica-Bold", 10)
             c.drawString(60, y_pos, f"{label}:")
             c.setFont("Helvetica", 10)
+            c.drawString(180, y_pos, str(value).upper() if value else "N/A")
             
-            if label == "ADDRESS":
-                maxWidth = 320 
-                text_lines = simpleSplit(str(value).upper(), "Helvetica", 10, maxWidth)
-                for line in text_lines:
-                    c.drawString(200, y_pos, line)
-                    y_pos -= 15
-                return y_pos - 5
-            else:
-                c.drawString(200, y_pos, str(value).upper() if value else "N/A")
-                return y_pos - 20
+            # Agar extra field (Mobile No) dena hai toh:
+            if extra_label and extra_value:
+                c.setFont("Helvetica-Bold", 10)
+                c.drawString(350, y_pos, f"{extra_label}:")
+                c.setFont("Helvetica", 10)
+                c.drawString(450, y_pos, str(extra_value).upper() if extra_value else "N/A")
+            
+            return y_pos - 20
 
         # SECTION: VEHICLE
         c.setFillColor(colors.HexColor("#0f4c75"))
@@ -102,12 +103,23 @@ if st.button("Generate Final Elite Report"):
         y -= 25
 
         c.setFillColor(colors.black)
-        y = draw_row("VEHICLE NO", v_no, y)
-        y = draw_row("MOBILE NO", mobile_no, y) # Vehicle No ke thik niche
+        # Yahan Vehicle No aur Mobile No ek saath print honge
+        y = draw_row("VEHICLE NO", v_no, y, "MOBILE NO", mobile_no) 
         y = draw_row("REG. DATE", reg_date, y)
         y = draw_row("OWNER NAME", owner_name, y)
-        y = draw_row("SON/DAUGHTER/WIFE OF", son_dougher, y) # Pura label likha hai
-        y = draw_row("ADDRESS", address, y)
+        y = draw_row("SON/DAUGHTER/WIFE OF", son_dougher, y)
+        
+        # Address multi-line fix
+        c.setFont("Helvetica-Bold", 10)
+        c.drawString(60, y, "ADDRESS:")
+        c.setFont("Helvetica", 10)
+        maxWidth = 350 
+        text_lines = simpleSplit(str(address).upper(), "Helvetica", 10, maxWidth)
+        for line in text_lines:
+            c.drawString(180, y, line)
+            y -= 15
+        y -= 5
+
         y = draw_row("VEHICLE MAKER", v_maker, y)
         y = draw_row("VEHICLE MODEL", v_model, y)
         y = draw_row("CHASSIS NO", chassis_no, y)
@@ -133,14 +145,14 @@ if st.button("Generate Final Elite Report"):
         qr_content = f"Vehicle No: {v_no}\nOwner: {owner_name}\nMobile: {mobile_no}"
         qr = qrcode.make(qr_content)
         qr.save("temp_qr.png")
-        c.drawImage("temp_qr.png", 450, 100, width=85, height=85)
+        c.drawImage("temp_qr.png", 450, 85, width=80, height=80)
         
         # FOOTER
-        c.line(50, 80, 540, 80)
+        c.line(50, 75, 540, 75)
         c.setFont("Helvetica-Bold", 11)
-        c.drawString(50, 65, "ELITE VEHICLE DESK")
-        c.drawRightString(540, 65, "Authorized Signatory")
+        c.drawString(50, 60, "ELITE VEHICLE DESK")
+        c.drawRightString(540, 60, "Authorized Signatory")
 
         c.save()
-        st.success("Elite Report Updated!")
+        st.success("Elite Report Updated with Side-by-Side Layout!")
         st.download_button("📥 Download Official PDF", buffer.getvalue(), f"Elite_Report_{v_no}.pdf", "application/pdf")
