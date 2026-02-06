@@ -2,7 +2,7 @@ import streamlit as st
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
-from reportlab.lib.utils import simpleSplit # Address wrap karne ke liye zaroori
+from reportlab.lib.utils import simpleSplit 
 import datetime
 import io
 import pytz 
@@ -24,7 +24,6 @@ with col1:
     v_no = st.text_input("Vehicle Number").upper()
     reg_date = st.text_input("Registration Date")
     owner_name = st.text_input("Owner Name").upper()
-    # NAYA INPUT FIELD ADDED
     son_dougher = st.text_input("Son/Daughter/Wife Of").upper() 
     address = st.text_area("Full Address")
 with col2:
@@ -109,7 +108,7 @@ if st.button("Generate Final Elite Report"):
 
         c.setFillColor(colors.black)
         
-        # --- VEHICLE NO AND MOBILE NO SIDE-BY-SIDE (EXACT SAME AS YOUR CODE) ---
+        # --- SIDE-BY-SIDE VEHICLE & MOBILE NO ---
         c.setFont("Helvetica-Bold", 10)
         c.drawString(60, y, "VEHICLE NO:")
         c.setFont("Helvetica", 10)
@@ -123,7 +122,6 @@ if st.button("Generate Final Elite Report"):
 
         y = draw_row("REG. DATE", reg_date, y)
         y = draw_row("OWNER NAME", owner_name, y)
-        # SON/DAUGHTER/WIFE OF LINE ADDED IN PDF
         y = draw_row("SON/DAUGHTER/WIFE OF", son_dougher, y) 
         y = draw_row("ADDRESS", address, y) 
         
@@ -148,12 +146,13 @@ if st.button("Generate Final Elite Report"):
         y = draw_row("POLICY NO", ins_policy, y)
         y = draw_row("EXPIRY DATE", ins_expire, y)
 
-        # --- FULL DETAIL QR CODE ---
+        # --- UPDATED QR CODE CONTENT WITH SON/DAUGHTER INFO ---
         qr_content = (
             f"ELITE VEHICLE DESK REPORT\n"
             f"--------------------------\n"
             f"Vehicle No: {v_no}\n"
             f"Owner Name: {owner_name}\n"
+            f"S/D/W Of: {son_dougher}\n" # Scan karne par ab ye bhi dikhega
             f"Chassis No: {chassis_no}\n"
             f"Engine No: {engine_no}\n\n"
             f"Verify on mParivahan:\n"
@@ -176,5 +175,5 @@ if st.button("Generate Final Elite Report"):
         c.drawString(50, 35, "Final status should be confirmed with official mParivahan/RTO government portals.")
 
         c.save()
-        st.success("Report Updated with Son/Daughter/Wife Details!")
+        st.success("Report Updated! QR Scan will now show all details.")
         st.download_button("📥 Download Official PDF", buffer.getvalue(), f"Elite_Report_{v_no}.pdf", "application/pdf")
