@@ -2,7 +2,7 @@ import streamlit as st
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
-from reportlab.lib.utils import simpleSplit # Address wrap karne ke liye
+from reportlab.lib.utils import simpleSplit 
 import datetime
 import io
 import pytz 
@@ -12,39 +12,39 @@ import qrcode
 IST = pytz.timezone('Asia/Kolkata')
 current_time = datetime.datetime.now(IST).strftime("%d-%m-%Y %I:%M %p")
 
-# Page Setup
 st.set_page_config(page_title="ELITE VEHICLE DESK", page_icon="⭐")
 
-# --- UI DESIGN ---
 st.title("⭐ ELITE VEHICLE DESK")
-st.write(f"📅 Date: {current_time}")
+st.write(f"📅 Report Date: {current_time}")
 
 # --- INPUT SECTION ---
-st.markdown("### 📝 Enter Vehicle Information")
+st.markdown("### 📝 Vehicle & Owner Details")
 col1, col2 = st.columns(2)
-
 with col1:
     v_no = st.text_input("Vehicle Number").upper()
     reg_date = st.text_input("Registration Date")
     owner_name = st.text_input("Owner Name").upper()
     address = st.text_area("Full Address")
-    mobile_no = st.text_input("Mobile No")
-
 with col2:
     v_maker = st.text_input("Vehicle Maker").upper()
     v_model = st.text_input("Vehicle Model").upper()
     chassis_no = st.text_input("Chassis Number").upper()
     engine_no = st.text_input("Engine Number").upper()
+
+st.markdown("### 🏦 Financing & Authority")
+c3, c4 = st.columns(2)
+with c3:
     hypo = st.text_input("Hypothecation").upper()
+    mobile_no = st.text_input("Mobile No")
+with c4:
     reg_auth = st.text_input("Registration Authority (RTO)").upper()
 
-st.markdown("---")
-st.markdown("### 🛡️ Insurance Details")
-ins_col1, ins_col2 = st.columns(2)
-with ins_col1:
+st.markdown("### 🛡️ Insurance Status")
+ins1, ins2 = st.columns(2)
+with ins1:
     ins_company = st.text_input("Insurance Company").upper()
     ins_policy = st.text_input("Policy Number").upper()
-with ins_col2:
+with ins_2:
     ins_expire = st.text_input("Expiry Date")
 
 # --- PDF GENERATOR ---
@@ -61,8 +61,8 @@ if st.button("Generate Final Elite Report"):
         c.setFillColor(colors.white)
         c.setFont("Helvetica-Bold", 26)
         c.drawCentredString(300, 795, "ELITE VEHICLE DESK")
-        c.setFont("Helvetica-Oblique", 11)
-        c.drawCentredString(300, 778, "Premium Vehicle Information & Documentation Services")
+        c.setFont("Helvetica-Oblique", 12)
+        c.drawCentredString(300, 775, "Official Vehicle Verification & Insurance Report")
         
         # --- BODY ---
         c.setFillColor(colors.black)
@@ -70,21 +70,14 @@ if st.button("Generate Final Elite Report"):
         c.drawString(50, 730, f"REPORT GENERATED ON: {current_time}")
         c.line(50, 720, 540, 720)
 
-        # Single Heading Layout
-        y = 700
-        c.setFont("Helvetica-Bold", 12)
-        c.drawString(50, y, "VEHICLE DETAILS:")
-        c.line(50, y-5, 160, y-5)
-        y -= 25
-
+        y = 690
         def draw_row(label, value, y_pos):
             c.setFont("Helvetica-Bold", 10)
             c.drawString(60, y_pos, f"{label}:")
             c.setFont("Helvetica", 10)
             
-            # Address Wrap Logic
             if label == "ADDRESS":
-                lines = simpleSplit(str(value).upper(), "Helvetica", 10, 330)
+                lines = simpleSplit(str(value).upper(), "Helvetica", 10, 320)
                 for line in lines:
                     c.drawString(200, y_pos, line)
                     y_pos -= 15
@@ -93,52 +86,53 @@ if st.button("Generate Final Elite Report"):
                 c.drawString(200, y_pos, str(value).upper() if value else "N/A")
                 return y_pos - 20
 
-        # Ordered Details
+        # VEHICLE DATA SECTION
+        c.setFillColor(colors.HexColor("#eef2f3"))
+        c.rect(50, y, 490, 20, fill=1)
+        c.setFillColor(colors.black)
+        c.setFont("Helvetica-Bold", 11)
+        c.drawString(60, y+5, "VEHICLE INFORMATION")
+        y -= 25
+
         y = draw_row("VEHICLE NO", v_no, y)
         y = draw_row("REG. DATE", reg_date, y)
         y = draw_row("OWNER NAME", owner_name, y)
         y = draw_row("ADDRESS", address, y)
         y = draw_row("MOBILE NO", mobile_no, y)
-        y = draw_row("VEHICLE MAKER", v_maker, y)
-        y = draw_row("VEHICLE MODEL", v_model, y)
+        y = draw_row("MAKER/MODEL", f"{v_maker} / {v_model}", y)
         y = draw_row("CHASSIS NO", chassis_no, y)
         y = draw_row("ENGINE NO", engine_no, y)
         y = draw_row("HYPOTHECATION", hypo, y)
-        y = draw_row("REG. AUTHORITY", reg_auth, y) # Shifted here
+        y = draw_row("REG. AUTHORITY", reg_auth, y)
 
-        # --- INSURANCE ---
-        y -= 15
-        c.setFillColor(colors.HexColor("#f2f2f2"))
+        # INSURANCE SECTION
+        y -= 10
+        c.setFillColor(colors.HexColor("#eef2f3"))
         c.rect(50, y, 490, 20, fill=1)
         c.setFillColor(colors.black)
-        c.setFont("Helvetica-Bold", 10)
-        c.drawCentredString(300, y+6, "INSURANCE INFORMATION")
-        
-        y -= 30
+        c.setFont("Helvetica-Bold", 11)
+        c.drawString(60, y+5, "INSURANCE DETAILS")
+        y -= 25
+
         y = draw_row("COMPANY NAME", ins_company, y)
         y = draw_row("POLICY NO", ins_policy, y)
         y = draw_row("EXPIRY DATE", ins_expire, y)
 
-        # --- QR CODE ---
-        qr_data = f"Vehicle: {v_no}\nOwner: {owner_name}\nChassis: {chassis_no}\nVerify: https://parivahan.gov.in/"
+        # QR CODE & FOOTER
+        qr_data = f"Vehicle: {v_no}\nOwner: {owner_name}\nVerify: https://parivahan.gov.in/"
         qr = qrcode.make(qr_data)
         qr.save("temp_qr.png")
-        c.drawImage("temp_qr.png", 450, 140, width=80, height=80)
-        c.setFont("Helvetica-Oblique", 7)
-        c.drawString(455, 130, "Scan for Verification")
-
-        # --- FOOTER ---
-        c.line(50, 110, 540, 110)
-        c.setFont("Helvetica-Bold", 12)
-        c.drawRightString(540, 90, "Authorized Signatory")
-        c.setFont("Helvetica-Bold", 10)
-        c.drawString(50, 90, "ELITE VEHICLE DESK")
+        c.drawImage("temp_qr.png", 450, 150, width=80, height=80)
         
-        # New Professional Disclaimer
+        c.line(50, 110, 540, 110)
+        c.setFont("Helvetica-Bold", 11)
+        c.drawString(50, 95, "ELITE VEHICLE DESK")
+        c.drawRightString(540, 95, "Authorized Signatory")
+        
         c.setFont("Helvetica", 8)
-        c.drawString(50, 70, "DECLARATION: This document is a digital record generated for informational purposes only.")
-        c.drawString(50, 60, "The data presented is subject to verification with the original Vahan Registry/mParivahan database.")
+        c.drawString(50, 75, "IMPORTANT: This is a digital report generated for informational purposes.")
+        c.drawString(50, 65, "The data is subject to verification with original Vahan Registry/mParivahan records.")
 
         c.save()
-        st.success("Premium Report Fixed & Generated!")
-        st.download_button("📥 Download Final PDF", buffer.getvalue(), f"Elite_Report_{v_no}.pdf", "application/pdf")
+        st.success("Premium Report Fixed!")
+        st.download_button("📥 Download Official PDF", buffer.getvalue(), f"Elite_Report_{v_no}.pdf", "application/pdf")
