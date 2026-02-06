@@ -44,7 +44,7 @@ ins1, ins2 = st.columns(2)
 with ins1:
     ins_company = st.text_input("Insurance Company").upper()
     ins_policy = st.text_input("Policy Number").upper()
-with ins_2:
+with ins2: # Error Fixed Here (removed underscore)
     ins_expire = st.text_input("Expiry Date")
 
 # --- PDF GENERATOR ---
@@ -55,13 +55,23 @@ if st.button("Generate Final Elite Report"):
         buffer = io.BytesIO()
         c = canvas.Canvas(buffer, pagesize=A4)
         
+        # --- WATERMARK ---
+        c.saveState()
+        c.setFont("Helvetica-Bold", 60)
+        c.setStrokeColor(colors.lightgrey)
+        c.setFillColor(colors.lightgrey, alpha=0.1)
+        c.translate(300, 400)
+        c.rotate(45)
+        c.drawCentredString(0, 0, "ELITE VEHICLE DESK")
+        c.restoreState()
+        
         # --- HEADER ---
         c.setFillColor(colors.HexColor("#0f4c75"))
         c.rect(0, 750, 600, 100, fill=1)
         c.setFillColor(colors.white)
         c.setFont("Helvetica-Bold", 26)
         c.drawCentredString(300, 795, "ELITE VEHICLE DESK")
-        c.setFont("Helvetica-Oblique", 12)
+        c.setFont("Helvetica-Bold", 12) # Font Bold for better look
         c.drawCentredString(300, 775, "Official Vehicle Verification & Insurance Report")
         
         # --- BODY ---
@@ -86,14 +96,15 @@ if st.button("Generate Final Elite Report"):
                 c.drawString(200, y_pos, str(value).upper() if value else "N/A")
                 return y_pos - 20
 
-        # VEHICLE DATA SECTION
-        c.setFillColor(colors.HexColor("#eef2f3"))
+        # SECTION: VEHICLE
+        c.setFillColor(colors.HexColor("#0f4c75"))
         c.rect(50, y, 490, 20, fill=1)
-        c.setFillColor(colors.black)
+        c.setFillColor(colors.white)
         c.setFont("Helvetica-Bold", 11)
         c.drawString(60, y+5, "VEHICLE INFORMATION")
         y -= 25
 
+        c.setFillColor(colors.black)
         y = draw_row("VEHICLE NO", v_no, y)
         y = draw_row("REG. DATE", reg_date, y)
         y = draw_row("OWNER NAME", owner_name, y)
@@ -105,34 +116,36 @@ if st.button("Generate Final Elite Report"):
         y = draw_row("HYPOTHECATION", hypo, y)
         y = draw_row("REG. AUTHORITY", reg_auth, y)
 
-        # INSURANCE SECTION
+        # SECTION: INSURANCE
         y -= 10
-        c.setFillColor(colors.HexColor("#eef2f3"))
+        c.setFillColor(colors.HexColor("#0f4c75"))
         c.rect(50, y, 490, 20, fill=1)
-        c.setFillColor(colors.black)
+        c.setFillColor(colors.white)
         c.setFont("Helvetica-Bold", 11)
         c.drawString(60, y+5, "INSURANCE DETAILS")
         y -= 25
 
+        c.setFillColor(colors.black)
         y = draw_row("COMPANY NAME", ins_company, y)
         y = draw_row("POLICY NO", ins_policy, y)
         y = draw_row("EXPIRY DATE", ins_expire, y)
 
-        # QR CODE & FOOTER
+        # QR CODE
         qr_data = f"Vehicle: {v_no}\nOwner: {owner_name}\nVerify: https://parivahan.gov.in/"
         qr = qrcode.make(qr_data)
         qr.save("temp_qr.png")
         c.drawImage("temp_qr.png", 450, 150, width=80, height=80)
         
+        # FOOTER
         c.line(50, 110, 540, 110)
         c.setFont("Helvetica-Bold", 11)
         c.drawString(50, 95, "ELITE VEHICLE DESK")
         c.drawRightString(540, 95, "Authorized Signatory")
         
-        c.setFont("Helvetica", 8)
-        c.drawString(50, 75, "IMPORTANT: This is a digital report generated for informational purposes.")
-        c.drawString(50, 65, "The data is subject to verification with original Vahan Registry/mParivahan records.")
+        c.setFont("Helvetica-Oblique", 8)
+        c.drawString(50, 75, "NOTE: This document is an electronically generated summary for quick verification.")
+        c.drawString(50, 65, "Final status should be confirmed with official mParivahan/RTO government portals.")
 
         c.save()
-        st.success("Premium Report Fixed!")
+        st.success("Final Premium Report Fixed & Generated!")
         st.download_button("📥 Download Official PDF", buffer.getvalue(), f"Elite_Report_{v_no}.pdf", "application/pdf")
