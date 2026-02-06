@@ -2,7 +2,7 @@ import streamlit as st
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
-from reportlab.lib.utils import simpleSplit 
+from reportlab.lib.utils import simpleSplit # Address wrap karne ke liye zaroori
 import datetime
 import io
 import pytz 
@@ -22,17 +22,21 @@ st.markdown("### 📝 Vehicle & Owner Details")
 col1, col2 = st.columns(2)
 with col1:
     v_no = st.text_input("Vehicle Number").upper()
-    mobile_no = st.text_input("Mobile No") 
     reg_date = st.text_input("Registration Date")
     owner_name = st.text_input("Owner Name").upper()
-    son_dougher = st.text_input("Son/Daughter/Wife Of").upper()
     address = st.text_area("Full Address")
 with col2:
     v_maker = st.text_input("Vehicle Maker").upper()
     v_model = st.text_input("Vehicle Model").upper()
     chassis_no = st.text_input("Chassis Number").upper()
     engine_no = st.text_input("Engine Number").upper()
+
+st.markdown("### 🏦 Financing & Authority")
+c3, c4 = st.columns(2)
+with c3:
     hypo = st.text_input("Hypothecation").upper()
+    mobile_no = st.text_input("Mobile No")
+with c4:
     reg_auth = st.text_input("Registration Authority (RTO)").upper()
 
 st.markdown("### 🛡️ Insurance Status")
@@ -77,22 +81,21 @@ if st.button("Generate Final Elite Report"):
         c.line(50, 720, 540, 720)
 
         y = 690
-
-        # Modified draw_row to handle side-by-side Mobile No
-        def draw_row(label, value, y_pos, extra_label=None, extra_value=None):
+        def draw_row(label, value, y_pos):
             c.setFont("Helvetica-Bold", 10)
             c.drawString(60, y_pos, f"{label}:")
             c.setFont("Helvetica", 10)
-            c.drawString(180, y_pos, str(value).upper() if value else "N/A")
             
-            # Agar extra field (Mobile No) dena hai toh:
-            if extra_label and extra_value:
-                c.setFont("Helvetica-Bold", 10)
-                c.drawString(350, y_pos, f"{extra_label}:")
-                c.setFont("Helvetica", 10)
-                c.drawString(450, y_pos, str(extra_value).upper() if extra_value else "N/A")
-            
-            return y_pos - 20
+            if label == "ADDRESS":
+                maxWidth = 320 
+                text_lines = simpleSplit(str(value).upper(), "Helvetica", 10, maxWidth)
+                for line in text_lines:
+                    c.drawString(200, y_pos, line)
+                    y_pos -= 15 
+                return y_pos - 5 
+            else:
+                c.drawString(200, y_pos, str(value).upper() if value else "N/A")
+                return y_pos - 20
 
         # SECTION: VEHICLE
         c.setFillColor(colors.HexColor("#0f4c75"))
@@ -103,23 +106,25 @@ if st.button("Generate Final Elite Report"):
         y -= 25
 
         c.setFillColor(colors.black)
-        # Yahan Vehicle No aur Mobile No ek saath print honge
-        y = draw_row("VEHICLE NO", v_no, y, "MOBILE NO", mobile_no) 
+        
+        # --- MODIFIED LINE: VEHICLE NO AND MOBILE NO SIDE-BY-SIDE ---
+        c.setFont("Helvetica-Bold", 10)
+        c.drawString(60, y, "VEHICLE NO:")
+        c.setFont("Helvetica", 10)
+        c.drawString(200, y, v_no)
+        
+        # Mobile No ko usi khali jagah mein set kiya
+        c.setFont("Helvetica-Bold", 10)
+        c.drawString(360, y, "MOBILE NO:")
+        c.setFont("Helvetica", 10)
+        c.drawString(450, y, mobile_no if mobile_no else "N/A")
+        y -= 20
+        # ---------------------------------------------------------
+
         y = draw_row("REG. DATE", reg_date, y)
         y = draw_row("OWNER NAME", owner_name, y)
-        y = draw_row("SON/DAUGHTER/WIFE OF", son_dougher, y)
-        
-        # Address multi-line fix
-        c.setFont("Helvetica-Bold", 10)
-        c.drawString(60, y, "ADDRESS:")
-        c.setFont("Helvetica", 10)
-        maxWidth = 350 
-        text_lines = simpleSplit(str(address).upper(), "Helvetica", 10, maxWidth)
-        for line in text_lines:
-            c.drawString(180, y, line)
-            y -= 15
-        y -= 5
-
+        y = draw_row("ADDRESS", address, y) 
+        # Mobile No yahan se hata diya kyunki upar shift ho gaya hai
         y = draw_row("VEHICLE MAKER", v_maker, y)
         y = draw_row("VEHICLE MODEL", v_model, y)
         y = draw_row("CHASSIS NO", chassis_no, y)
@@ -141,18 +146,33 @@ if st.button("Generate Final Elite Report"):
         y = draw_row("POLICY NO", ins_policy, y)
         y = draw_row("EXPIRY DATE", ins_expire, y)
 
-        # --- QR CODE ---
-        qr_content = f"Vehicle No: {v_no}\nOwner: {owner_name}\nMobile: {mobile_no}"
+        # --- FULL DETAIL QR CODE ---
+        qr_content = (
+            f"ELITE VEHICLE DESK REPORT\n"
+            f"--------------------------\n"
+            f"Vehicle No: {v_no}\n"
+            f"Owner Name: {owner_name}\n"
+            f"Chassis No: {chassis_no}\n"
+            f"Engine No: {engine_no}\n\n"
+            f"Verify on mParivahan:\n"
+            f"https://parivahan.gov.in/parivahan/"
+        )
         qr = qrcode.make(qr_content)
         qr.save("temp_qr.png")
-        c.drawImage("temp_qr.png", 450, 85, width=80, height=80)
+        c.drawImage("temp_qr.png", 450, 100, width=85, height=85)
+        c.setFont("Helvetica-Bold", 7)
+        c.drawString(455, 90, "Scan for Full Details")
         
         # FOOTER
-        c.line(50, 75, 540, 75)
+        c.line(50, 80, 540, 80)
         c.setFont("Helvetica-Bold", 11)
-        c.drawString(50, 60, "ELITE VEHICLE DESK")
-        c.drawRightString(540, 60, "Authorized Signatory")
+        c.drawString(50, 65, "ELITE VEHICLE DESK")
+        c.drawRightString(540, 65, "Authorized Signatory")
+        
+        c.setFont("Helvetica-Oblique", 8)
+        c.drawString(50, 45, "NOTE: This document is an electronically generated summary for quick verification.")
+        c.drawString(50, 35, "Final status should be confirmed with official mParivahan/RTO government portals.")
 
         c.save()
-        st.success("Elite Report Updated with Side-by-Side Layout!")
+        st.success("Report Generated with Mobile No in Vehicle Row!")
         st.download_button("📥 Download Official PDF", buffer.getvalue(), f"Elite_Report_{v_no}.pdf", "application/pdf")
