@@ -2,7 +2,7 @@ import streamlit as st
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
-from reportlab.lib.utils import simpleSplit 
+from reportlab.lib.utils import simpleSplit # Address wrap karne ke liye zaroori
 import datetime
 import io
 import pytz 
@@ -87,11 +87,13 @@ if st.button("Generate Final Elite Report"):
             c.setFont("Helvetica", 10)
             
             if label == "ADDRESS":
-                lines = simpleSplit(str(value).upper(), "Helvetica", 10, 320)
-                for line in lines:
+                # Address ko PDF ki width ke hisab se todna (Text Wrap)
+                maxWidth = 320 
+                text_lines = simpleSplit(str(value).upper(), "Helvetica", 10, maxWidth)
+                for line in text_lines:
                     c.drawString(200, y_pos, line)
-                    y_pos -= 15
-                return y_pos - 5
+                    y_pos -= 15 # Agali line ke liye gap
+                return y_pos - 5 # Pura block khatam hone ke baad extra gap
             else:
                 c.drawString(200, y_pos, str(value).upper() if value else "N/A")
                 return y_pos - 20
@@ -108,10 +110,10 @@ if st.button("Generate Final Elite Report"):
         y = draw_row("VEHICLE NO", v_no, y)
         y = draw_row("REG. DATE", reg_date, y)
         y = draw_row("OWNER NAME", owner_name, y)
-        y = draw_row("ADDRESS", address, y)
+        y = draw_row("ADDRESS", address, y) # Multi-line fix
         y = draw_row("MOBILE NO", mobile_no, y)
-        y = draw_row("VEHICLE MAKER", v_maker, y) # Separated
-        y = draw_row("VEHICLE MODEL", v_model, y) # Separated
+        y = draw_row("VEHICLE MAKER", v_maker, y)
+        y = draw_row("VEHICLE MODEL", v_model, y)
         y = draw_row("CHASSIS NO", chassis_no, y)
         y = draw_row("ENGINE NO", engine_no, y)
         y = draw_row("HYPOTHECATION", hypo, y)
@@ -144,20 +146,20 @@ if st.button("Generate Final Elite Report"):
         )
         qr = qrcode.make(qr_content)
         qr.save("temp_qr.png")
-        c.drawImage("temp_qr.png", 450, 130, width=85, height=85)
+        c.drawImage("temp_qr.png", 450, 100, width=85, height=85)
         c.setFont("Helvetica-Bold", 7)
-        c.drawString(455, 120, "Scan for Full Details")
+        c.drawString(455, 90, "Scan for Full Details")
         
         # FOOTER
-        c.line(50, 100, 540, 100)
+        c.line(50, 80, 540, 80)
         c.setFont("Helvetica-Bold", 11)
-        c.drawString(50, 85, "ELITE VEHICLE DESK")
-        c.drawRightString(540, 85, "Authorized Signatory")
+        c.drawString(50, 65, "ELITE VEHICLE DESK")
+        c.drawRightString(540, 65, "Authorized Signatory")
         
         c.setFont("Helvetica-Oblique", 8)
-        c.drawString(50, 65, "NOTE: This document is an electronically generated summary for quick verification.")
-        c.drawString(50, 55, "Final status should be confirmed with official mParivahan/RTO government portals.")
+        c.drawString(50, 45, "NOTE: This document is an electronically generated summary for quick verification.")
+        c.drawString(50, 35, "Final status should be confirmed with official mParivahan/RTO government portals.")
 
         c.save()
-        st.success("Final Premium Report Fixed & Generated!")
+        st.success("Report Generated with Auto-Wrap Address!")
         st.download_button("📥 Download Official PDF", buffer.getvalue(), f"Elite_Report_{v_no}.pdf", "application/pdf")
