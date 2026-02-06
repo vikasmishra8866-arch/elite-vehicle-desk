@@ -2,7 +2,7 @@ import streamlit as st
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
-from reportlab.lib.utils import simpleSplit # Address wrap karne ke liye zaroori
+from reportlab.lib.utils import simpleSplit 
 import datetime
 import io
 import pytz 
@@ -24,19 +24,15 @@ with col1:
     v_no = st.text_input("Vehicle Number").upper()
     reg_date = st.text_input("Registration Date")
     owner_name = st.text_input("Owner Name").upper()
+    son_dougher = st.text_input("Son/Daughter/Wife Of").upper() # Naya Field
+    mobile_no = st.text_input("Mobile No") # Yahan shift kiya
     address = st.text_area("Full Address")
 with col2:
     v_maker = st.text_input("Vehicle Maker").upper()
     v_model = st.text_input("Vehicle Model").upper()
     chassis_no = st.text_input("Chassis Number").upper()
     engine_no = st.text_input("Engine Number").upper()
-
-st.markdown("### 🏦 Financing & Authority")
-c3, c4 = st.columns(2)
-with c3:
     hypo = st.text_input("Hypothecation").upper()
-    mobile_no = st.text_input("Mobile No")
-with c4:
     reg_auth = st.text_input("Registration Authority (RTO)").upper()
 
 st.markdown("### 🛡️ Insurance Status")
@@ -87,13 +83,12 @@ if st.button("Generate Final Elite Report"):
             c.setFont("Helvetica", 10)
             
             if label == "ADDRESS":
-                # Address ko PDF ki width ke hisab se todna (Text Wrap)
                 maxWidth = 320 
                 text_lines = simpleSplit(str(value).upper(), "Helvetica", 10, maxWidth)
                 for line in text_lines:
                     c.drawString(200, y_pos, line)
-                    y_pos -= 15 # Agali line ke liye gap
-                return y_pos - 5 # Pura block khatam hone ke baad extra gap
+                    y_pos -= 15
+                return y_pos - 5
             else:
                 c.drawString(200, y_pos, str(value).upper() if value else "N/A")
                 return y_pos - 20
@@ -110,8 +105,9 @@ if st.button("Generate Final Elite Report"):
         y = draw_row("VEHICLE NO", v_no, y)
         y = draw_row("REG. DATE", reg_date, y)
         y = draw_row("OWNER NAME", owner_name, y)
-        y = draw_row("ADDRESS", address, y) # Multi-line fix
-        y = draw_row("MOBILE NO", mobile_no, y)
+        y = draw_row("S/D/W OF", son_dougher, y) # Owner ke niche add kiya
+        y = draw_row("MOBILE NO", mobile_no, y) # Mobile yahan shift kiya
+        y = draw_row("ADDRESS", address, y)
         y = draw_row("VEHICLE MAKER", v_maker, y)
         y = draw_row("VEHICLE MODEL", v_model, y)
         y = draw_row("CHASSIS NO", chassis_no, y)
@@ -161,5 +157,5 @@ if st.button("Generate Final Elite Report"):
         c.drawString(50, 35, "Final status should be confirmed with official mParivahan/RTO government portals.")
 
         c.save()
-        st.success("Report Generated with Auto-Wrap Address!")
+        st.success("Elite Report Updated!")
         st.download_button("📥 Download Official PDF", buffer.getvalue(), f"Elite_Report_{v_no}.pdf", "application/pdf")
