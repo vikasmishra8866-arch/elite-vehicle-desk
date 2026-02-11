@@ -3,3 +3,4 @@ reportlab
 pytz
 qrcode
 Pillow
+google-generativeai
