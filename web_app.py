@@ -10,12 +10,11 @@ import qrcode
 import google.generativeai as genai
 from PIL import Image
 
-# --- GEMINI AI SETUP ---
-# Aapki API Key yahan set hai
-API_KEY = "AIzaSyCodTmsjFLl_MFgahtATwfWmhuAI-dIxzs"
+# --- GEMINI AI SETUP (With Your New Key) ---
+API_KEY = "AIzaSyBCnOvFT835gjOzBntnKRhFf-jqJIEaP0c"
 genai.configure(api_key=API_KEY)
 
-# Session State Initialize (Taki scan ke baad data boxes mein dikhe)
+# Session State Initialize (Taki data boxes mein tika rahe)
 if 'v_data' not in st.session_state:
     st.session_state.v_data = {
         'v_no': "", 'reg_date': "", 'owner': "", 'father': "",
@@ -35,20 +34,19 @@ st.write(f"📅 Report Date: {current_time}")
 # --- AI MAGIC SCANNER SECTION ---
 st.markdown("---")
 st.markdown("### 🤖 AI Magic Scanner (Auto-Fill)")
-uploaded_file = st.file_uploader("Upload Virtual RC Photo (Insurance/RC)", type=['png', 'jpg', 'jpeg'])
+uploaded_file = st.file_uploader("Upload Virtual RC / Insurance Photo", type=['png', 'jpg', 'jpeg'])
 
 if uploaded_file is not None:
     if st.button("✨ Scan & Auto-Fill Details"):
-        with st.spinner("AI is reading your Virtual RC... Please wait."):
+        with st.spinner("AI is reading the document..."):
             try:
                 img = Image.open(uploaded_file)
-                # Using standard flash model for better compatibility
+                # Using the stable flash model
                 model = genai.GenerativeModel('gemini-1.5-flash')
                 
                 prompt = """
-                Extract vehicle details from this Virtual RC/Insurance image. 
-                Ignore Mobile Number completely.
-                Format the response as:
+                Extract vehicle details from this image. DO NOT extract Mobile Number. 
+                Format the response EXACTLY like this:
                 VNO: [Registration Number]
                 DATE: [Registration Date]
                 NAME: [Owner Name]
@@ -56,18 +54,17 @@ if uploaded_file is not None:
                 ADDR: [Full Address]
                 MAKER: [Maker Name]
                 MODEL: [Model Name]
-                CHASSIS: [Chassis Number]
-                ENGINE: [Engine Number]
+                CHASSIS: [Chassis No]
+                ENGINE: [Engine No]
                 RTO: [Registering Authority]
-                INS_CO: [Insurance Company Name]
-                INS_POL: [Policy Number]
-                INS_EXP: [Insurance Expiry Date]
+                INS_CO: [Insurance Company]
+                INS_POL: [Insurance Policy No]
+                INS_EXP: [Insurance Valid UpTo]
                 """
                 
                 response = model.generate_content([prompt, img])
                 lines = response.text.split('\n')
                 
-                # Mapping AI results to session state
                 mapping = {
                     'VNO': 'v_no', 'DATE': 'reg_date', 'NAME': 'owner',
                     'SDW': 'father', 'ADDR': 'address', 'MAKER': 'maker',
@@ -81,13 +78,13 @@ if uploaded_file is not None:
                             st.session_state.v_data[state_key] = line.split(":", 1)[1].strip()
                 
                 st.success("Details Extracted! Review them below.")
-                st.rerun() # Refreshing the page to show values in text boxes
+                st.rerun()
             except Exception as e:
-                st.error(f"Error: {e}. Please ensure your API key is active.")
+                st.error(f"Error: {e}. If this is a 404, please wait 2 minutes for the new key to activate.")
 
 st.markdown("---")
 
-# --- INPUT SECTION (Auto-filled by AI) ---
+# --- INPUT SECTION (Linked with AI Session State) ---
 st.markdown("### 📝 Vehicle & Owner Details")
 col1, col2 = st.columns(2)
 with col1:
@@ -118,7 +115,7 @@ with ins1:
 with ins2:
     ins_expire = st.text_input("Expiry Date", value=st.session_state.v_data['ins_exp'])
 
-# --- PDF GENERATOR (Original Code Retained) ---
+# --- PDF GENERATOR (Original Logic) ---
 if st.button("Generate Final Elite Report"):
     if not v_no or not owner_name:
         st.error("Please fill required details!")
@@ -128,15 +125,14 @@ if st.button("Generate Final Elite Report"):
         
         # Watermark
         c.saveState()
-        c.setFont("Helvetica-Bold", 60)
-        c.setStrokeColor(colors.lightgrey)
-        c.setFillColor(colors.lightgrey, alpha=0.1)
-        c.translate(300, 400); c.rotate(45)
-        c.drawCentredString(0, 0, "ELITE VEHICLE DESK"); c.restoreState()
+        c.setFont("Helvetica-Bold", 60); c.setStrokeColor(colors.lightgrey)
+        c.setFillColor(colors.lightgrey, alpha=0.1); c.translate(300, 400)
+        c.rotate(45); c.drawCentredString(0, 0, "ELITE VEHICLE DESK"); c.restoreState()
         
         # Header
         c.setFillColor(colors.HexColor("#0f4c75")); c.rect(0, 750, 600, 100, fill=1)
-        c.setFillColor(colors.white); c.setFont("Helvetica-Bold", 26); c.drawCentredString(300, 795, "ELITE VEHICLE DESK")
+        c.setFillColor(colors.white); c.setFont("Helvetica-Bold", 26)
+        c.drawCentredString(300, 795, "ELITE VEHICLE DESK")
         c.setFont("Helvetica-Bold", 12); c.drawCentredString(300, 775, "Official Vehicle Verification & Insurance Report")
         
         c.setFillColor(colors.black); c.setFont("Helvetica-Bold", 10)
@@ -156,7 +152,7 @@ if st.button("Generate Final Elite Report"):
                 c.drawString(200, y_pos, str(value).upper() if value else "N/A")
                 return y_pos - 20
 
-        # Vehicle Info Section
+        # Section: Vehicle
         c.setFillColor(colors.HexColor("#0f4c75")); c.rect(50, y, 490, 20, fill=1)
         c.setFillColor(colors.white); c.setFont("Helvetica-Bold", 11); c.drawString(60, y+5, "VEHICLE INFORMATION"); y -= 25
         c.setFillColor(colors.black)
@@ -176,7 +172,7 @@ if st.button("Generate Final Elite Report"):
         y = draw_row("HYPOTHECATION", hypo, y)
         y = draw_row("REG. AUTHORITY", reg_auth, y)
 
-        # Insurance Section
+        # Section: Insurance
         y -= 10; c.setFillColor(colors.HexColor("#0f4c75")); c.rect(50, y, 490, 20, fill=1)
         c.setFillColor(colors.white); c.drawString(60, y+5, "INSURANCE DETAILS"); y -= 25
         c.setFillColor(colors.black)
@@ -194,5 +190,5 @@ if st.button("Generate Final Elite Report"):
         c.setFont("Helvetica-Bold", 11); c.drawString(50, 65, "ELITE VEHICLE DESK"); c.drawRightString(540, 65, "Authorized Signatory")
         
         c.save()
-        st.success("Report Ready!")
+        st.success("Report Generated!")
         st.download_button("📥 Download Official PDF", buffer.getvalue(), f"Elite_Report_{v_no}.pdf", "application/pdf")
