@@ -1,7 +1,5 @@
-google-generativeai>=0.8.3
 streamlit
-Pillow
-python-dotenv
 reportlab
-qrcode
 pytz
+qrcode
+Pillow
